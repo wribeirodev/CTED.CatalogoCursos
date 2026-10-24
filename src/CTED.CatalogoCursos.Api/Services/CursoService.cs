@@ -6,28 +6,20 @@ namespace CTED.CatalogoCursos.Api.Services;
 
 public sealed class CursoService(CatalogoDbContext db)
 {
-    public async Task<CursoConsultaDto> ObterCursosPorFiltro(string? busca, string? categoria, string? modalidade, string? status, CancellationToken cancellationToken)
+    public async Task<CursoConsultaDto> ConsultarAsync(string? busca, string? categoria, string? modalidade, string? status, CancellationToken cancellationToken)
     {
         var query = db.Cursos.AsNoTracking().AsQueryable();
-
         if (!string.IsNullOrWhiteSpace(busca))
         {
             var termo = busca.Trim().ToLower();
             query = query.Where(x => x.NomeCompleto.ToLower().Contains(termo) || x.NomeBreve.ToLower().Contains(termo));
         }
-
-        if (!string.IsNullOrWhiteSpace(categoria)) 
-            query = query.Where(x => x.Categoria == categoria);
-        if (!string.IsNullOrWhiteSpace(modalidade)) 
-            query = query.Where(x => x.Modalidade == modalidade);
-        if (!string.IsNullOrWhiteSpace(status)) 
-            query = query.Where(x => x.Status == status);
+        if (!string.IsNullOrWhiteSpace(categoria)) query = query.Where(x => x.Categoria == categoria);
+        if (!string.IsNullOrWhiteSpace(modalidade)) query = query.Where(x => x.Modalidade == modalidade);
+        if (!string.IsNullOrWhiteSpace(status)) query = query.Where(x => x.Status == status);
 
         var cursos = await query.OrderBy(x => x.NomeCompleto).ToListAsync(cancellationToken);
-        var resultados = cursos
-            .Select(x => new CursoResumoDto(
-                x.Id, x.NomeCompleto, x.NomeBreve, x.Descricao, x.Categoria, x.Modalidade, x.CargaHoraria, x.Status, x.ImagemUrl, x.DataDisponibilizacao))
-            .ToArray();
+        var resultados = cursos.Select(x => new CursoResumoDto(x.Id, x.NomeCompleto, x.NomeBreve, x.Descricao, x.Categoria, x.Modalidade, x.CargaHoraria, x.Status, x.ImagemUrl, x.DataDisponibilizacao)).ToArray();
         return new CursoConsultaDto(resultados.Length, busca, categoria, modalidade, status, resultados);
     }
 

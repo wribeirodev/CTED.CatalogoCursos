@@ -1,24 +1,26 @@
-# Build stage
+# Etapa 1: restaura, compila e publica a API
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+
 WORKDIR /src
+COPY CTED.CatalogoCursos.Api.csproj ./
+RUN dotnet restore CTED.CatalogoCursos.Api.csproj
 
-COPY ./CTED.CatalogoCursos.Api.csproj ./
-RUN dotnet restore
+COPY . ./
+RUN dotnet publish CTED.CatalogoCursos.Api.csproj \
+    --configuration Release \
+    --output /app/publish \
+    --no-restore \
+    /p:UseAppHost=false
 
-COPY . .
-RUN dotnet publish -c Release -o /app/publish
-
-# Runtime stage
+# Etapa 2: imagem menor somente com o runtime
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
-WORKDIR /app
 
-# Copy published output
+WORKDIR /app
 COPY --from=build /app/publish .
 
-# Ensure the Data directory exists and is writable (for SQLite)
-RUN mkdir -p Data && chmod -R 777 Data
-
-ENV ASPNETCORE_URLS=http://+:8080
+# O Render fornece a variável PORT em tempo de execução.
+# O valor 8080 serve como fallback para execução local.
+ENV ASPNETCORE_ENVIRONMENT=Production
 EXPOSE 8080
 
-ENTRYPOINT ["dotnet", "CTED.CatalogoCursos.Api.dll"]
+ENTRYPOINT ["sh", "-c", "dotnet CTED.CatalogoCursos.Api.dll --urls http://0.0.0.0:${PORT:-8080}"]
