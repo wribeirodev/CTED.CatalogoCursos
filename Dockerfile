@@ -2,11 +2,14 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 
 WORKDIR /src
-COPY CTED.CatalogoCursos.Api.csproj ./
-RUN dotnet restore CTED.CatalogoCursos.Api.csproj
 
-COPY . ./
-RUN dotnet publish CTED.CatalogoCursos.Api.csproj \
+# No projeto original, o csproj fica dentro de src/CTED.CatalogoCursos.Api
+COPY src/CTED.CatalogoCursos.Api/CTED.CatalogoCursos.Api.csproj src/CTED.CatalogoCursos.Api/
+RUN dotnet restore src/CTED.CatalogoCursos.Api/CTED.CatalogoCursos.Api.csproj
+
+# Copia o restante da solução
+COPY . .
+RUN dotnet publish src/CTED.CatalogoCursos.Api/CTED.CatalogoCursos.Api.csproj \
     --configuration Release \
     --output /app/publish \
     --no-restore \
